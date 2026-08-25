@@ -1,8 +1,29 @@
+import os
+from telegram import Update
+from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
+from groq import Groq
+from flask import Flask
+from threading import Thread
+
+# API Tokens များ (သင့်ရဲ့ Token များကို ထည့်ထားပါ)
+TELEGRAM_BOT_TOKEN = "8892803898:AAGRuboJKkD9gTk9v3tYm-DnG3szsNNWOWY"
+GROQ_API_KEY = "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"
+
+client = Groq(api_key=GROQ_API_KEY)
+
+SYSTEM_PROMPT = """
+You are a helpful customer service AI for a Mobile Legends: Bang Bang (MLBB) account trading business. 
+Your job is to answer customer inquiries professionally about buying and selling MLBB accounts, skin prices, 
+safe transactions (MM/Middleman service), payment methods (Kpay, Wave, KBZ), and account details (Emblem, Win rate, Skins).
+Be polite, clear, and helpful in Burmese.
+"""
+
+# Telegram Bot စာလက်ခံဖြေကြားခြင်း
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_message = update.message.text
     try:
         chat_completion = client.chat.completions.create(
-            model="llama-3.1-8b-instant",  # Model နာမည်ကို ဒါလေးနဲ့ စမ်းပါ။
+            model="llama-3.3-70b-versatile",
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_message}
@@ -10,7 +31,34 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         bot_reply = chat_completion.choices[0].message.content
     except Exception as e:
-        # ဘာ Error တက်နေလဲ Telegram ထဲမှာ ပေါ်လာအောင် လုပ်ခြင်း
-        bot_reply = f"Error ဖြစ်နေ습니다: {str(e)}"
+        bot_reply = f"Error ဖြစ်နေပါသည်: {str(e)}"
     
     await update.message.reply_text(bot_reply)
+
+# Render Port Error မတက်အောင် ယာယီ Flask Server ထောင်ခြင်း
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Bot is running!"
+
+def run():
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host='0.0.0.0', port=port)
+
+def keep_alive():
+    t = Thread(target=run)
+    t.start()
+
+# Main Program
+if __name__ == '__main__':
+    # ၁။ Flask ကို Background မှာ အရင် run မယ် (Port ဖမ်းဖို့)
+    keep_alive()
+    print("Web server started...")
+
+    # ၂။ Telegram Bot ကို စတင်မယ်
+    print("MLBB Trading Bot is running...")
+    application = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
+    application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
+    
+    application.run_polling()
