@@ -6,7 +6,7 @@ from flask import Flask
 from threading import Thread
 
 # API Tokens များ
-TELEGRAM_BOT_TOKEN = "8892803898:AAEGRi8Uf9SGtFAVL5KYeeZ1KNNbdUuWTo4"
+TELEGRAM_BOT_TOKEN = "8892803898:AAGRuboJKkD9gTk9v3tYm-DnG3szsNNWOWY"
 GROQ_API_KEY = "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"
 
 client = Groq(api_key=GROQ_API_KEY)
@@ -18,12 +18,11 @@ safe transactions (MM/Middleman service), payment methods (Kpay, Wave, KBZ), and
 Be polite, clear, and helpful in Burmese.
 """
 
-# Telegram Bot စာလက်ခံဖြေကြားခြင်း
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_message = update.message.text
     try:
         chat_completion = client.chat.completions.create(
-            model="llama-3.1-8b-instant",  # အလုပ်လုပ်တဲ့ Model အသစ်သို့ ပြောင်းထားပါပြီ
+            model="llama-3.1-8b-instant",  # အလုပ်လုပ်တဲ့ Model အမှန်
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_message}
@@ -35,7 +34,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text(bot_reply)
 
-# Render Port Error မတက်အောင် ယာယီ Flask Server ထောင်ခြင်း
 app = Flask('')
 
 @app.route('/')
@@ -50,14 +48,11 @@ def keep_alive():
     t = Thread(target=run)
     t.start()
 
-# Main Program
 if __name__ == '__main__':
-    # ၁။ Flask ကို Background မှာ အရင် run မယ်
     keep_alive()
     print("Web server started...")
-
-    # ၂။ Telegram Bot ကို စတင်မယ်
     print("MLBB Trading Bot is running...")
+    
     application = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
     application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
     
