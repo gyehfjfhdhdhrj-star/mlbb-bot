@@ -2,10 +2,8 @@ import os
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
 from groq import Groq
-from flask import Flask
-from threading import Thread
+from flask import Flask, request
 
-# API Tokens များ
 TELEGRAM_BOT_TOKEN = "8892803898:AAEGRi8Uf9SGtFAVL5KYeeZ1KNNbdUuWTo4"
 GROQ_API_KEY = "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"
 
@@ -17,6 +15,11 @@ Your job is to answer customer inquiries professionally about buying and selling
 safe transactions (MM/Middleman service), payment methods (Kpay, Wave, KBZ), and account details (Emblem, Win rate, Skins).
 Be polite, clear, and helpful in Burmese.
 """
+
+app = Flask('')
+
+# Telegram Bot Application ကို တစ်ခါတည်း တည်ဆောက်ခြင်း
+application = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_message = update.message.text
@@ -34,26 +37,26 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text(bot_reply)
 
-app = Flask('')
+application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
 
 @app.route('/')
 def home():
     return "Bot is running!"
 
-def run():
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host='0.0.0.0', port=port)
-
-def keep_alive():
-    t = Thread(target=run)
-    t.start()
+# Render ကနေ Telegram Update များကို Webhook ဖြင့် လက်ခံရန်
+@app.route(f'/{TELEGRAM_BOT_TOKEN}', methods=['POST'])
+def webhook():
+    update = Update.de_json(request.get_json(force=True), application.bot)
+    application.update_queue.put(update)
+    return 'ok'
 
 if __name__ == '__main__':
-    keep_alive()
-    print("Web server started...")
-    print("MLBB Trading Bot is running...")
+    # Webhook ကို Render ရဲ့ URL နဲ့ ချိတ်ဆက်ခြင်း
+    PORT = int(os.environ.get('PORT', 8080))
+    URL = os.environ.get('RENDER_EXTERNAL_URL') # Render ကပေးတဲ့ URL ကို အလိုအလျောက်ယူမည်
     
-    application = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
-    application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
+    if URL:
+        application.bot.set_webhook(url=f"{URL}/{TELEGRAM_BOT_TOKEN}")
+        print(f"Webhook set to: {URL}/{TELEGRAM_BOT_TOKEN}")
     
-    application.run_polling()
+    app.run(host='0.0.0.0', port=PORT)
