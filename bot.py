@@ -31,9 +31,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text(bot_reply)
 
-if __name__ == '__main__':
+# အပေါ်က Bot handler ကုဒ်တွေ ပြီးတဲ့အခါ...
+
+import os
+from flask import Flask
+from threading import Thread
+
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Bot is running!"   # return ဆိုတာ သေချာထည့်ပါ
+
+def run():
     port = int(os.environ.get("PORT", 8080))
-    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
-    app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
+    app.run(host='0.0.0.0', port=port)
+
+def keep_alive():
+    t = Thread(target=run)
+    t.start()
+
+if __name__ == '__main__':
+    keep_alive()  # Flask ဝဘ်ဆာဗာကို စတင်ရန်
     print("MLBB Trading Bot is running...")
-    app.run_polling()
+    app.run_polling()  # Telegram bot ကို စတင်ရန် (python-telegram-bot သုံးထားပါက)
