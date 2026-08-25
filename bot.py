@@ -5,7 +5,7 @@ from groq import Groq
 from flask import Flask
 from threading import Thread
 
-# API Tokens များ (သင့်ရဲ့ Token များကို ထည့်ထားပါ)
+# API Tokens များ
 TELEGRAM_BOT_TOKEN = "8892803898:AAGRuboJKkD9gTk9v3tYm-DnG3szsNNWOWY"
 GROQ_API_KEY = "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"
 
@@ -23,7 +23,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_message = update.message.text
     try:
         chat_completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="llama-3.1-8b-instant",  # အလုပ်လုပ်တဲ့ Model အသစ်သို့ ပြောင်းထားပါပြီ
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_message}
@@ -52,7 +52,7 @@ def keep_alive():
 
 # Main Program
 if __name__ == '__main__':
-    # ၁။ Flask ကို Background မှာ အရင် run မယ် (Port ဖမ်းဖို့)
+    # ၁။ Flask ကို Background မှာ အရင် run မယ်
     keep_alive()
     print("Web server started...")
 
